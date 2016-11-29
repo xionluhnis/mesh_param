@@ -34,3 +34,7 @@
 *.swp
 
 build/*
+
+*-arap.obj
+*-lscm.obj
+*-harm.obj
