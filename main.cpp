@@ -49,6 +49,12 @@ int main(int argc, char *argv[])
   }
   std::cout << "Using maxIter=" << maxIter << "\n";
 
+  double timestep = 1.0;
+  if(argc > 4){
+    timestep = atof(argv[4]);
+  }
+  std::cout << "Using timestep=" << timestep << "\n";
+
   // Load a mesh in OFF format
   igl::read_triangle_mesh(filename, V, F);
 
@@ -68,8 +74,16 @@ int main(int argc, char *argv[])
     // Add dynamic regularization to avoid to specify boundary conditions
     igl::ARAPData arap_data;
     arap_data.with_dynamics = true;
-    Eigen::VectorXi b  = Eigen::VectorXi::Zero(0);
-    Eigen::MatrixXd bc = Eigen::MatrixXd::Zero(0,0);
+    arap_data.h = timestep;
+    // Fix two points on the boundary
+    Eigen::VectorXi b(2,1);
+    igl::boundary_loop(F, bnd);
+    b(0) = bnd(0);
+    b(1) = bnd(round(bnd.size()/2));
+    Eigen::MatrixXd bc(2,2);
+    bc << 0,0,1,0;
+    // Eigen::VectorXi b  = Eigen::VectorXi::Zero(0);
+    // Eigen::MatrixXd bc = Eigen::MatrixXd::Zero(0,0);
     
     // Initialize ARAP
     arap_data.max_iter = maxIter;
