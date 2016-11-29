@@ -16,7 +16,7 @@ This should find and build the dependencies and create a `mesh_param` binary.
 
 From within the `build` directory just issue:
 
-    ./mesh_param ../models/piggy.obj
+    ./mesh_param ../models/piggy.obj 1 5
 
 A glfw app should launch displaying the piggy with its parameterization..
 
@@ -32,10 +32,12 @@ If you clone the repository recursively, this should be taken care of:
 
 ## Generating parameterization
 
-    ./mesh_param ../models/piggy.obj all
+    ./mesh_param ../models/piggy.obj
 
 will creates the following files in `models`:
  * `piggy.obj-arap.obj` - the as-rigid-as-possible parameterization
+ * `piggy.obj-harm.obj` - harmonic mapping
+ * `piggy.obj-lscm.obj` - least-square conformal mapping
 
 ## License
 
