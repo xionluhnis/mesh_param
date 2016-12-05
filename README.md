@@ -39,6 +39,14 @@ will creates the following files in `models`:
  * `piggy.obj-harm.obj` - harmonic mapping
  * `piggy.obj-lscm.obj` - least-square conformal mapping
 
+## Generating wave model
+
+    ./mesh_wave -x 10 -y 10 -sx 100 -sy 100 -ax 0.1,0.2 -fy 1,5.7 -fx 4.5
+
+will create two files `mesh.obj` and `mesh_surf.obj`.
+ * `mesh.obj` is a wave volume
+ * `mesh_surf.obj` is a wave surface with default uv parameterization
+
 ## License
 
 See [libigl](libigl.github.io/libigl/) for its own license.

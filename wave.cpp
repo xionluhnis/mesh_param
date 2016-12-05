@@ -228,7 +228,7 @@ int main(int argc, char *argv[]) {
     Fs(j, 2) = i + nx;
     for(size_t k = 0; k < 3; ++k){
       Fv(j, k)      = Fs(j, k);
-      Fv(j + M, k) = Fs(j, 2 - k); // bottom has inverse orientation
+      Fv(j + M, k)  = Fs(j, 2 - k) + N; // bottom has inverse orientation
     }
     ++j;
     Fs(j, 0) = i + 1;
@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
     Fs(j, 2) = i + nx;
     for(size_t k = 0; k < 3; ++k){
       Fv(j, k)      = Fs(j, k);
-      Fv(j + M, k) = Fs(j, 2 - k); // bottom has inverse orientation
+      Fv(j + M, k)  = Fs(j, 2 - k) + N; // bottom has inverse orientation
     }
     ++j;
   }
@@ -263,13 +263,13 @@ int main(int argc, char *argv[]) {
   }
   for(size_t x = 0; x < nx - 1; ++x){
     // y=0 faces
-    Fv(j, 0) = x;
+    Fv(j, 0) = x + N;
     Fv(j, 1) = x + 1;
-    Fv(j, 2) = x + N;
+    Fv(j, 2) = x;
     ++j;
-    Fv(j, 0) = x + 1;
+    Fv(j, 0) = x + N;
     Fv(j, 1) = x + N + 1;
-    Fv(j, 2) = x + N;
+    Fv(j, 2) = x + 1;
     ++j;
     // y=dy faces
     for(size_t f = 0; f < 2; ++f){
