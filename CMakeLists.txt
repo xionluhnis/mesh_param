@@ -29,7 +29,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
 option(LIBIGL_USE_STATIC_LIBRARY "Use LibIGL as static library" OFF)
 
 # add a customizable menu bar
-option(LIBIGL_WITH_NANOGUI     "Use Nanogui menu"   OFF)
+option(LIBIGL_WITH_NANOGUI     "Use Nanogui menu"   ON)
 
 # libigl options: choose your dependencies (by default everything is OFF except opengl) 
 option(LIBIGL_WITH_VIEWER      "Use OpenGL viewer"  ON)
@@ -70,5 +70,8 @@ add_definitions(${LIBIGL_DEFINITIONS})
 
 # Add your project files
 FILE(GLOB SRCFILES *.cpp)
-add_executable(${PROJECT_NAME} ${SRCFILES} ${LIBIGL_EXTRA_SOURCES})
+add_executable(${PROJECT_NAME} main.cpp ${LIBIGL_EXTRA_SOURCES})
 target_link_libraries(${PROJECT_NAME} ${LIBIGL_LIBRARIES} ${LIBIGL_EXTRA_LIBRARIES})
+
+add_executable(mesh_wave wave.cpp ${LIBIGL_EXTRA_SOURCES})
+target_link_libraries(mesh_wave ${LIBIGL_LIBRARIES} ${LIBIGL_EXTRA_LIBRARIES})

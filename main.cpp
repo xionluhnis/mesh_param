@@ -55,6 +55,12 @@ int main(int argc, char *argv[])
   }
   std::cout << "Using timestep=" << timestep << "\n";
 
+  double youngmodulus = 1.0;
+  if(argc > 5){
+    youngmodulus = atof(argv[5]);
+  }
+  std::cout << "Using young modulus=" << youngmodulus << "\n";
+
   // Load a mesh in OFF format
   igl::read_triangle_mesh(filename, V, F);
 
@@ -75,6 +81,7 @@ int main(int argc, char *argv[])
     igl::ARAPData arap_data;
     arap_data.with_dynamics = true;
     arap_data.h = timestep;
+    arap_data.ym = youngmodulus;
     // Fix two points on the boundary
     Eigen::VectorXi b(2,1);
     igl::boundary_loop(F, bnd);
