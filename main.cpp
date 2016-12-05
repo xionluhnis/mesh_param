@@ -26,6 +26,8 @@ bool key_down(igl::viewer::Viewer& viewer, unsigned char key, int modifier);
 
 void usage(const std::string &basename);
 
+Eigen::MatrixXd normUV(Eigen::MatrixXd &uv);
+
 int main(int argc, char *argv[])
 {
   if(argc > 1) {
@@ -145,9 +147,9 @@ int main(int argc, char *argv[])
   // write meshes
   Eigen::MatrixXd V0(0,0);
   Eigen::MatrixXi F0(0,0);
-  igl::writeOBJ(filename + "_arap.obj", V, F, V0, F0, V_arap, F);
-  igl::writeOBJ(filename + "_harm.obj", V, F, V0, F0, V_harm, F);
-  igl::writeOBJ(filename + "_lscm.obj", V, F, V0, F0, V_lscm, F);
+  igl::writeOBJ(filename + "_arap.obj", V, F, V0, F0, normUV(V_arap), F);
+  igl::writeOBJ(filename + "_harm.obj", V, F, V0, F0, normUV(V_harm), F);
+  igl::writeOBJ(filename + "_lscm.obj", V, F, V0, F0, normUV(V_lscm), F);
 
   return 0;
 }
@@ -193,4 +195,12 @@ bool key_down(igl::viewer::Viewer& viewer, unsigned char key, int modifier) {
   return false;
 }
 
-
+Eigen::MatrixXd normUV(Eigen::MatrixXd &uv) {
+  for(size_t i = 0; i < 2; ++i){
+    // go to [0;inf)^2
+    uv.col(i).array() -= double(uv.col(i).minCoeff());
+    // go to [0;1]^2
+    uv.col(i).array() *= 1.0/ std::max(1e-6, uv.col(i).maxCoeff());
+  }
+  return uv;
+}

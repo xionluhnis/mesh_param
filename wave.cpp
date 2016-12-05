@@ -170,23 +170,42 @@ int main(int argc, char *argv[]) {
   cout << "ax in [" << ax.from << ";" << ax.to << "], ";
   cout << "ay in [" << ay.from << ";" << ay.to << "]\n";
 
-  // generate surface mesh
-  MatrixXd Vs(nx * ny, 3); // vertices of surface
-  MatrixXi Fs(2 * (nx - 1) * (ny - 1), 3); // faces of surface
+  // surface mesh
+  size_t N = nx * ny;
+  size_t M = (nx - 1) * (ny - 1) * 2;
+  MatrixXd Vs(N, 3); // vertices of surface
+  MatrixXi Fs(M, 3); // faces of surface
+  MatrixXd UVs(N, 2); // uv mapping
+  // volume mesh
+  MatrixXd Vv(2 * N, 3);
+  MatrixXi Fv(
+    2 * M // top and bottom faces
+      + (nx - 1) * 4 + (ny - 1) * 4, // sides
+    3 // triangles
+  );
 
   // set vertices
-  for(size_t i = 0, j = 0, x = 0, y = 0; i < Vs.rows(); ++i, ++x){
+  size_t j = 0;
+  for(size_t i = 0, x = 0, y = 0; i < Vs.rows(); ++i, ++x){
     if(x >= nx){
       x = 0;
       ++y;
     }
 
-    // set vertices
+    // set vertices (x,y)
     Vs(i, 0) = x * dx / nx;
     Vs(i, 1) = y * dy / ny;
 
+    // volume vertices
+    Vv(i, 0) = Vv(i + N, 0) = Vs(i, 0);
+    Vv(i, 1) = Vv(i + N, 1) = Vs(i, 1);
+
     double xp = x / double(nx-1);
     double yp = y / double(ny-1);
+
+    // default uv map
+    UVs(i, 0) = xp;
+    UVs(i, 1) = yp;
 
     // function z = f(x, y)
     double Axy = ax(xp) + ay(yp);
@@ -196,18 +215,76 @@ int main(int argc, char *argv[]) {
       Vs(i, 2) = dz + Axy * std::abs(Sx + Sy);
     else
       Vs(i, 2) = dz + std::max(ax.max(), ay.max()) * 0.5 + Axy * (Sx + Sy);
+    
+    // volume height
+    Vv(i, 2) = Vs(i, 2);
+    Vv(i + N, 2) = 0.0;
 
     // set two triangle faces
     if(x + 1 >= nx || y + 1 >= ny)
       continue;
-    Fs(j, 0) = i; Fs(j, 1) = i + 1; Fs(j, 2) = i + nx;
+    Fs(j, 0) = i;
+    Fs(j, 1) = i + 1;
+    Fs(j, 2) = i + nx;
+    for(size_t k = 0; k < 3; ++k){
+      Fv(j, k)      = Fs(j, k);
+      Fv(j + M, k) = Fs(j, 2 - k); // bottom has inverse orientation
+    }
     ++j;
-    Fs(j, 0) = i + 1; Fs(j, 1) = i + nx + 1; Fs(j, 2) = i + nx;
+    Fs(j, 0) = i + 1;
+    Fs(j, 1) = i + nx + 1;
+    Fs(j, 2) = i + nx;
+    for(size_t k = 0; k < 3; ++k){
+      Fv(j, k)      = Fs(j, k);
+      Fv(j + M, k) = Fs(j, 2 - k); // bottom has inverse orientation
+    }
     ++j;
   }
+  cout << "Surface faces: " << j << " out of " << Fs.rows() << "\n";
+  j *= 2; // we already did all the bottom faces
+
+  // extra faces for volume (sides)
+  for(size_t y = 0; y < ny - 1; ++y){
+    // x=0 faces
+    Fv(j, 0) = y * nx;
+    Fv(j, 1) = (y + 1) * nx + N;
+    Fv(j, 2) = y * nx + N;
+    ++j;
+    Fv(j, 0) = y * nx;
+    Fv(j, 1) = (y + 1) * nx;
+    Fv(j, 2) = (y + 1) * nx + N;
+    ++j;
+    // x=dx faces
+    for(size_t f = 0; f < 2; ++f){
+      for(size_t k = 0; k < 3; ++k)
+        Fv(j, k) = Fv(j-2, 2-k) + nx - 1;
+      ++j;
+    }
+  }
+  for(size_t x = 0; x < nx - 1; ++x){
+    // y=0 faces
+    Fv(j, 0) = x;
+    Fv(j, 1) = x + 1;
+    Fv(j, 2) = x + N;
+    ++j;
+    Fv(j, 0) = x + 1;
+    Fv(j, 1) = x + N + 1;
+    Fv(j, 2) = x + N;
+    ++j;
+    // y=dy faces
+    for(size_t f = 0; f < 2; ++f){
+      for(size_t k = 0; k < 3; ++k)
+        Fv(j, k) = Fv(j-2, 2-k) + N - nx;
+      ++j;
+    }
+  }
+  cout << "Volume faces: " << j << " out of " << Fv.rows() << "\n";
   
   // write mesh
-  igl::writeOBJ(filename + "_surf.obj", Vs, Fs);
+  MatrixXd Vn;
+  MatrixXi Fn;
+  igl::writeOBJ(filename + "_surf.obj", Vs, Fs, Vn, Fn, UVs, Fs);
+  igl::writeOBJ(filename + ".obj", Vv, Fv);
 
   return 0;
 }
