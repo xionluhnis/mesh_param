@@ -25,6 +25,8 @@ void usage(const string &basename) {
     " -sx   nx    number of samples on the x axis\n"
     " -sy   ny    number of samples on the y axis\n"
     " -abs        use absolute version of sinusoids\n"
+    " -arcnorm    use arc-length normalization uv mapping\n"
+    " -normuv     normalize UV locations to be within [0;1]^2"
     " -h/--help   show this help message\n"
     "\n"
     "Notes:\n"
@@ -77,7 +79,7 @@ int main(int argc, char *argv[]) {
   double sx = 100.0, sy = 0.0;
   range fx(10), fy;
   range ax, ay;
-  bool abs = false;
+  bool abs = false, arclength = false, normuv = false;
 
   for(int i = 1; i < argc; ++i){
     string param = argv[i];
@@ -85,6 +87,15 @@ int main(int argc, char *argv[]) {
     if(param == "-abs"){
       abs = true;
       continue;
+
+    } else if(param == "-arclength"){
+      arclength = true;
+      continue;
+
+    } else if(param == "-normuv"){
+      normuv = true;
+      continue;
+
     } else if(param == "-h" || param == "--help"){
       usage(argv[0]);
       return 0;
@@ -203,10 +214,6 @@ int main(int argc, char *argv[]) {
     double xp = x / double(nx-1);
     double yp = y / double(ny-1);
 
-    // default uv map
-    UVs(i, 0) = xp;
-    UVs(i, 1) = yp;
-
     // function z = f(x, y)
     double Axy = ax(xp) + ay(yp);
     double Sx = sin(2.0 * M_PI * fx(xp) * xp);
@@ -216,6 +223,25 @@ int main(int argc, char *argv[]) {
     else
       Vs(i, 2) = dz + std::max(ax.max(), ay.max()) * 0.5 + Axy * (Sx + Sy);
     
+    // uv map
+    if(!arclength){
+      // default (x,y) uv map
+      UVs(i, 0) = xp;
+      UVs(i, 1) = yp;
+    } else {
+      // arclength-normalized uv map
+      // - x / u
+      if(x == 0)
+        UVs(i, 0) = 0.0;
+      else
+        UVs(i, 0) = UVs(i - 1, 0) + Vs.row(i - 1).norm();
+      // - y / v
+      if(y == 0)
+        UVs(i, 1) = 0.0;
+      else
+        UVs(i, 1) = UVs(i - nx, 1) + Vs.row(i - nx).norm();
+    }
+
     // volume height
     Vv(i, 2) = Vs(i, 2);
     Vv(i + N, 2) = 0.0;
@@ -280,6 +306,16 @@ int main(int argc, char *argv[]) {
   }
   cout << "Volume faces: " << j << " out of " << Fv.rows() << "\n";
   
+  // normalize uv
+  if(normuv){
+    for(size_t i = 0; i < 2; ++i){
+      // go to [0;inf)^2
+      UVs.col(i).array() -= double(UVs.col(i).minCoeff());
+      // go to [0;1]^2
+      UVs.col(i).array() *= 1.0/ std::max(1e-6, UVs.col(i).maxCoeff());
+    }
+  }
+
   // write mesh
   MatrixXd Vn;
   MatrixXi Fn;
