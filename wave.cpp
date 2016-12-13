@@ -315,9 +315,9 @@ int main(int argc, char *argv[]) {
     for(size_t i = 0; i < 2; ++i){
       // go to [0;inf)^2
       UVs.col(i).array() -= double(UVs.col(i).minCoeff());
-      // go to [0;1]^2
-      UVs.col(i).array() *= 1.0/ std::max(1e-6, UVs.col(i).maxCoeff());
     }
+    // go to [0;1]^2
+    UVs.array() *= 1.0/ std::max(1e-6, UVs.array().maxCoeff());
   }
 
   // write mesh
