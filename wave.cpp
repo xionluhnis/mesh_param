@@ -10,13 +10,13 @@ using namespace std;
 
 void usage(const string &basename) {
   cout << 
-    "Usage: " << basename << " [options] mesh\n";
+    "Usage: " << basename << " [options] mesh\n"
     "\n"
     "Outputs mesh.obj (volume) amd mesh_surf.obj (surface).\n"
     "\n"
     "Options:\n"
-    " -x    dx    mesh width"
-    " -y    dy    mesh height"
+    " -x    dx    mesh width\n"
+    " -y    dy    mesh height\n"
     " -z    dz    base altitude\n"
     " -fx   a,b   frequency range on x axis over [0;1] stretched to [0;dx]\n"
     " -fy   a,b   frequency range on y axis over [0;1] stretched to [0;dy]\n"
@@ -25,7 +25,7 @@ void usage(const string &basename) {
     " -sx   nx    number of samples on the x axis\n"
     " -sy   ny    number of samples on the y axis\n"
     " -abs        use absolute version of sinusoids\n"
-    " -arcnorm    use arc-length normalization uv mapping\n"
+    " -arclength  use arc-length normalization uv mapping\n"
     " -normuv     normalize UV locations to be within [0;1]^2"
     " -h/--help   show this help message\n"
     "\n"
@@ -219,9 +219,9 @@ int main(int argc, char *argv[]) {
     double Sx = sin(2.0 * M_PI * fx(xp) * xp);
     double Sy = sin(2.0 * M_PI * fy(yp) * yp);
     if(abs)
-      Vs(i, 2) = dz + Axy * std::abs(Sx + Sy);
+      Vs(i, 2) = Axy * std::abs(Sx + Sy);
     else
-      Vs(i, 2) = dz + std::max(ax.max(), ay.max()) * 0.5 + Axy * (Sx + Sy);
+      Vs(i, 2) = Axy * (Sx + Sy);
     
     // uv map
     if(!arclength){
@@ -234,12 +234,12 @@ int main(int argc, char *argv[]) {
       if(x == 0)
         UVs(i, 0) = 0.0;
       else
-        UVs(i, 0) = UVs(i - 1, 0) + Vs.row(i - 1).norm();
+        UVs(i, 0) = UVs(i - 1, 0) + (Vs.row(i) - Vs.row(i - 1)).norm();
       // - y / v
       if(y == 0)
         UVs(i, 1) = 0.0;
       else
-        UVs(i, 1) = UVs(i - nx, 1) + Vs.row(i - nx).norm();
+        UVs(i, 1) = UVs(i - nx, 1) + (Vs.row(i) - Vs.row(i - nx)).norm();
     }
 
     // volume height
@@ -268,6 +268,10 @@ int main(int argc, char *argv[]) {
   }
   cout << "Surface faces: " << j << " out of " << Fs.rows() << "\n";
   j *= 2; // we already did all the bottom faces
+
+  // moving surface up using minimum to make sure the base is safe
+  Vs.col(2).array() += dz - Vs.col(2).minCoeff();
+  Vv.block(0, 2, N, 1) = Vs.col(2);
 
   // extra faces for volume (sides)
   for(size_t y = 0; y < ny - 1; ++y){
